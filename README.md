@@ -46,3 +46,7 @@ The script creates a hidden `AppData` sheet for the complete app data and mirror
 
 ## Build the APK using GitHub Actions (optional)
 A workflow is included at `.github/workflows/build-apk.yml`. Push this project to a GitHub repository on the `main` branch (or use **Actions > Build debug APK > Run workflow**). When the workflow finishes, download the `meal-manager-debug-apk` artifact from that workflow run.
+
+
+### About page and developer profile
+The About tab displays the developer name (Shibly), a circular profile photo bundled locally in `app/src/main/assets/profile-shibly.jpg`, and a clickable Facebook profile link: https://www.facebook.com/shibly6. The profile photo is stored inside the app, so it does not require an internet connection.

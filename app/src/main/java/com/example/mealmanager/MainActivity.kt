@@ -2,6 +2,8 @@ package com.example.mealmanager
 
 import android.app.Activity
 import android.os.Bundle
+import android.content.Intent
+import android.net.Uri
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebView
@@ -18,7 +20,15 @@ class MainActivity : Activity() {
         web.settings.javaScriptEnabled = true
         web.settings.domStorageEnabled = true
         web.settings.allowFileAccess = true
-        web.webViewClient = WebViewClient()
+        web.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
+                if (url.startsWith("https://") || url.startsWith("http://")) {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                    return true
+                }
+                return false
+            }
+        }
         web.webChromeClient = WebChromeClient()
         web.addJavascriptInterface(SheetsBridge(), "MealBridge")
         setContentView(web)
