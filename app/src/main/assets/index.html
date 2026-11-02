@@ -27,7 +27,24 @@ if(tab==='meals')$('#mealForm')?.addEventListener('submit',e=>{e.preventDefault(
 if(tab==='bazar')$('#bazarForm')?.addEventListener('submit',e=>{e.preventDefault();let f=new FormData(e.target);data().bazar.push({id:uid(),date:f.get('date'),name:f.get('name'),amount:Number(f.get('amount')),note:f.get('note')});save();show()});
 }
 function removeMember(id){if(!confirm('Remove this member? Existing historical entries are retained.'))return;state.members=state.members.filter(m=>m.id!==id);save();show()}
-function removeEntry(type,id){let d=data();d[type]=d[type].filter(x=>x.id!==id);save();show()}
+function removeEntry(type,id){
+ let d=data(),entry=d[type].find(x=>x.id===id);
+ if(!entry)return;
+ let message='';
+ if(type==='meals'){
+  let member=state.members.find(m=>m.id===entry.memberId);
+  message=`Delete this meal entry?\n\nMember: ${member?.name||'Removed member'}\nDate: ${entry.date}\nMeal units: ${entry.count}\n\nOnly this meal entry will be deleted.`;
+ }else if(type==='bazar'){
+  message=`Delete this bazar entry?\n\nBuyer: ${entry.name}\nDate: ${entry.date}\nAmount: ${money(entry.amount)}\nNote: ${entry.note||'Bazar'}\n\nOnly this bazar entry will be deleted.`;
+ }else if(type==='deposits'){
+  let member=state.members.find(m=>m.id===entry.memberId);
+  message=`Delete this deposit entry?\n\nMember: ${member?.name||'Removed member'}\nDate: ${entry.date}\nAmount: ${money(entry.amount)}\n\nOnly this deposit entry will be deleted.`;
+ }else{
+  message='Are you sure you want to delete this entry?';
+ }
+ if(!confirm(message))return;
+ d[type]=d[type].filter(x=>x.id!==id);save();show()
+}
 function saveEndpoint(){state.settings.endpoint=$('#endpoint').value.trim();state.settings.token=$('#syncToken').value.trim();save();$('#syncStatus').textContent='Sync settings saved on this phone.'}
 function syncNow(mode){let el=$('#syncStatus'),url=state.settings.endpoint;if(!url){el.className='status bad';el.textContent='Enter and save your Apps Script URL first.';return}try{let response,token=state.settings.token;if(!token)throw Error('Enter the access token configured in Apps Script.');if(mode==='push'){response=MealBridge.request('POST',url,JSON.stringify({action:'save',token,data:state}));}else{response=MealBridge.request('GET',url+'?action=load&token='+encodeURIComponent(token),'');}let result=JSON.parse(response);if(result.error||result.ok===false)throw Error(result.error||result.message||'Sync failed');if(mode==='pull'){if(!result.data)throw Error('No saved data returned');state=result.data;save();show();}el=$('#syncStatus');el.className='status good';el.textContent=mode==='push'?'Upload complete. Google Sheets has the latest app data.':'Download complete. Local data has been replaced with the sheet backup.'}catch(e){el=$('#syncStatus');el.className='status bad';el.textContent='Sync failed: '+e.message}}
 function exportCSV(){let c=calc(),lines=[['Member','Meals','Net deposit / adjustment (BDT)','Meal cost (BDT)','Remaining balance (BDT)'],...c.rows.map(m=>[m.name,m.meals,m.deposit,m.cost,m.balance])];let csv=lines.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');download(csv,'meal-report-'+key()+'.csv','text/csv')}
