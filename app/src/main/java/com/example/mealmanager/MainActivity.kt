@@ -8,6 +8,8 @@ import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.print.PrintManager
+import android.print.PrintAttributes
 import java.net.HttpURLConnection
 import java.net.URL
 import java.io.OutputStreamWriter
@@ -15,8 +17,10 @@ import java.io.OutputStream
 
 class MainActivity : Activity() {
     private lateinit var web: WebView
+    private var reportWebView: WebView? = null
     private val CREATE_BACKUP = 101
     private val OPEN_BACKUP = 102
+    private val CREATE_CSV = 103
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         web = WebView(this)
@@ -45,6 +49,9 @@ class MainActivity : Activity() {
             if (requestCode == CREATE_BACKUP) {
                 contentResolver.openOutputStream(uri)?.use { it.write(pendingBackup.toByteArray(Charsets.UTF_8)) }
                 web.evaluateJavascript("alert('Backup exported successfully.')", null)
+            } else if (requestCode == CREATE_CSV) {
+                contentResolver.openOutputStream(uri)?.use { it.write(pendingCsv.toByteArray(Charsets.UTF_8)) }
+                web.evaluateJavascript("alert('CSV report exported successfully.')", null)
             } else if (requestCode == OPEN_BACKUP) {
                 val json = contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() } ?: ""
                 val quoted = org.json.JSONObject.quote(json)
@@ -56,6 +63,7 @@ class MainActivity : Activity() {
         }
     }
     private var pendingBackup: String = ""
+    private var pendingCsv: String = ""
 
     override fun onBackPressed() {
         if (web.canGoBack()) web.goBack() else super.onBackPressed()
@@ -72,6 +80,18 @@ class MainActivity : Activity() {
                 startActivityForResult(intent, CREATE_BACKUP)
             }
         }
+        @JavascriptInterface fun exportCSV(csv: String, filename: String) {
+            runOnUiThread {
+                pendingCsv = csv
+                val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = "text/csv"
+                    putExtra(Intent.EXTRA_TITLE, filename)
+                }
+                startActivityForResult(intent, CREATE_CSV)
+            }
+        }
+
         @JavascriptInterface fun pickBackup() {
             runOnUiThread {
                 val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
@@ -79,6 +99,30 @@ class MainActivity : Activity() {
                     type = "application/json"
                 }
                 startActivityForResult(intent, OPEN_BACKUP)
+            }
+        }
+
+        @JavascriptInterface fun printReport(html: String) {
+            runOnUiThread {
+                try {
+                    val printView = WebView(this@MainActivity)
+                    reportWebView = printView
+                    printView.settings.javaScriptEnabled = false
+                    printView.webViewClient = object : WebViewClient() {
+                        override fun onPageFinished(view: WebView, url: String?) {
+                            val manager = getSystemService(PRINT_SERVICE) as PrintManager
+                            manager.print(
+                                "Meal-Manager-${System.currentTimeMillis()}",
+                                view.createPrintDocumentAdapter("Meal Manager Monthly Report"),
+                                PrintAttributes.Builder().build()
+                            )
+                        }
+                    }
+                    printView.loadDataWithBaseURL(null, html, "text/HTML", "UTF-8", null)
+                } catch (e: Exception) {
+                    val msg = org.json.JSONObject.quote(e.message ?: "Could not open PDF export")
+                    web.evaluateJavascript("alert('PDF export error: '+$msg)", null)
+                }
             }
         }
 
