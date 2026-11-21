@@ -51,8 +51,116 @@ main{padding:17px 15px;overflow:hidden}.grid{gap:12px}.card{border:1px solid #e3
 @media(min-width:620px){.dash-two-col{grid-template-columns:1fr 1fr;gap:12px}.dash-kpis{gap:14px}.dash-actions{gap:12px}.dash-action{padding:14px 6px}.dash-action b{font-size:12px}}
 @media(max-width:360px){.dash-actions{gap:5px}.dash-action b{font-size:10px}.dash-action small{font-size:8px}.dash-chart-key{font-size:8px}}
 
+
+
+/* Brighter Emerald & Cream theme + persistent light/dark mode */
+:root{
+ --bg:#f4f8f4;--card:#ffffff;--ink:#244237;--muted:#71877b;
+ --green:#29966f;--line:#e1ebe4;--red:#c94f55;
+ --emerald-deep:#1b7659;--emerald-soft:#eaf6ef;--mint:#d9f0e2;
+ color-scheme:light;
+}
+html[data-theme="light"] body,body{background:linear-gradient(180deg,#edf7f0 0,#f4f8f4 280px);color:var(--ink)}
+header{background:linear-gradient(115deg,#1b7659 0%,#29966f 58%,#43ad80 100%);box-shadow:0 7px 22px #237b5a20;padding-right:104px}
+header h1{color:#fff}
+header small{color:#f0fff6;opacity:1}
+.monthbar input{background:#fff;color:#244237;border:1px solid #dcebe1;box-shadow:0 3px 10px #1d674414}
+nav{background:#fffffff2;border-color:#e1ebe4;box-shadow:0 4px 14px #1b76590d;backdrop-filter:blur(12px);scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{background:#f0f7f2;color:#657b6e;border-radius:12px;padding:10px 14px}
+nav button.active{background:linear-gradient(135deg,#268b67,#39a779);color:#fff;border:0;box-shadow:0 4px 12px #29966f35}
+.card{background:var(--card);border-color:var(--line);box-shadow:0 5px 17px #244b3510;border-radius:19px}
+.sectionhead h2{color:#244237}
+.btn{background:linear-gradient(135deg,#258b66,#39a779);box-shadow:0 3px 9px #258b6626;border-radius:12px}
+.btn.secondary{background:#e8f5ed;color:#207d5b;box-shadow:none}
+.btn.danger{background:#fff0ef;color:#bd4b50;box-shadow:none}
+.pill{background:#e7f5ec;color:#207d5b}
+.row{border-color:#e5eee8}
+.row .sub,.muted,.hint,.metric small{color:#71877b}
+.amount{color:#29483b}
+input,select,textarea{background:#fff;color:#244237;border-color:#d8e7dd;border-radius:12px;box-shadow:0 2px 6px #244b3508}
+input:focus,select:focus,textarea:focus{outline:2px solid #b5e3c9;border-color:#39a779}
+label{color:#526d5e}
+.syncbox{background:linear-gradient(135deg,#eef8f1,#f5faf5);border:1px solid #dfede3;color:#456554;border-radius:12px}
+.good,.dash-positive,.positive{color:#21875f}
+.bad,.dash-negative,.negative{color:#c94f55}
+.metric{--metric-color:#268b66;--metric-orb:#d7f0e1;--metric-bg:#f6fbf7;--metric-border:#e0eee5;--metric-shadow:#29966f12}
+.grid .metric:nth-child(1),.dash-kpis .dash-blue{--metric-bg:#eaf7ef;--metric-border:#d2eadb;--metric-color:#23865f;--metric-orb:#c9ead5}
+.grid .metric:nth-child(2),.dash-kpis .dash-pink{--metric-bg:#fff1ef;--metric-border:#f3ddd8;--metric-color:#bd6552;--metric-orb:#f7d9d1}
+.grid .metric:nth-child(3),.dash-kpis .dash-yellow{--metric-bg:#fff8e8;--metric-border:#f1e7c9;--metric-color:#987322;--metric-orb:#f5e9c5}
+.grid .metric:nth-child(4),.dash-kpis .dash-teal{--metric-bg:#e9f7f4;--metric-border:#d3ebe4;--metric-color:#258276;--metric-orb:#ccebe3}
+.grid .metric:nth-child(5){--metric-bg:#f1f5eb;--metric-border:#e1e9d8;--metric-color:#6d824d;--metric-orb:#dce9cf}
+.dash-welcome{background:linear-gradient(120deg,#1b7659,#29966f 62%,#43ad80);box-shadow:0 9px 22px #258b6628}
+.dash-kpis .metric span{color:#688174}
+.dash-action{background:#fff;border-color:#e1ebe4;color:#29483b;box-shadow:0 4px 12px #244b350c}
+.action-meal,.action-deposit{background:#edf8f1}.action-bazar{background:#fff3ef}.action-report{background:#f1f6ed}
+.dash-chart-key{color:#71877b}.key-meal{background:#329d75}.key-expense{background:#d18a64}
+.dash-bars{border-color:#e1ebe4}.meal-bar{background:linear-gradient(180deg,#79cda2,#29966f)}.expense-bar{background:linear-gradient(180deg,#f0b89c,#c77c58)}
+.dash-avatar{background:#e7f5ec;color:#207d5b}.dash-leader{border-color:#e5eee8}.dash-rank{background:#e7f5ec;color:#207d5b}
+.dash-progress{background:#e5eee8}.dash-progress i{background:linear-gradient(90deg,#29966f,#76c99a)}
+.dash-note{border-color:#dceee2;background:linear-gradient(120deg,#edf8f1,#f7fbf5);color:#4d6959}.dash-note small{color:#71877b}
+.about-link,.facebook-link{background:#e7f5ec!important;color:#207d5b!important}
+.theme-toggle{position:absolute;right:16px;top:16px;border:1px solid #ffffff75;border-radius:999px;background:#ffffff24;color:#fff;padding:8px 12px;font:650 12px system-ui;cursor:pointer;min-height:34px}
+.theme-toggle:active{transform:scale(.97)}
+@media(min-width:600px){.theme-toggle{right:20px;top:18px}}
+
+/* Dark mode: brighter emerald accents with softer charcoal-green surfaces */
+html[data-theme="dark"]{
+ color-scheme:dark;
+ --bg:#15241c;--card:#203329;--ink:#e7f2ea;--muted:#a8bcb0;
+ --green:#75cfa0;--line:#354e40;--red:#ff8985;
+}
+html[data-theme="dark"] body{background:linear-gradient(180deg,#1a3024 0,#15241c 320px);color:#e7f2ea}
+html[data-theme="dark"] header{background:linear-gradient(115deg,#174a36,#1d6949 58%,#27875d);box-shadow:0 7px 22px #00000024}
+html[data-theme="dark"] nav{background:#1c2d23f2;border-color:#354e40}
+html[data-theme="dark"] nav button{background:#293e31;color:#b8cbbf}
+html[data-theme="dark"] nav button.active{background:linear-gradient(135deg,#23875e,#35a675);color:#fff;box-shadow:0 4px 12px #00000030}
+html[data-theme="dark"] .card,html[data-theme="dark"] .dash-action{background:#203329;border-color:#354e40;box-shadow:0 5px 18px #00000020}
+html[data-theme="dark"] .sectionhead h2,html[data-theme="dark"] .amount,html[data-theme="dark"] .dash-leader strong{color:#e7f2ea}
+html[data-theme="dark"] .btn{background:linear-gradient(135deg,#23875e,#35a675);color:#fff}
+html[data-theme="dark"] .btn.secondary{background:#315541;color:#c5efd4;box-shadow:none}
+html[data-theme="dark"] .btn.danger{background:#4a302f;color:#ffb0aa;box-shadow:none}
+html[data-theme="dark"] .pill{background:#315541;color:#c5efd4}
+html[data-theme="dark"] .row,html[data-theme="dark"] .dash-leader,html[data-theme="dark"] .dash-bars{border-color:#354e40}
+html[data-theme="dark"] .row .sub,html[data-theme="dark"] .muted,html[data-theme="dark"] .hint,html[data-theme="dark"] .metric small,html[data-theme="dark"] .dash-chart-key,html[data-theme="dark"] .dash-note small{color:#a8bcb0}
+html[data-theme="dark"] input,html[data-theme="dark"] select,html[data-theme="dark"] textarea{background:#192b21;color:#e7f2ea;border-color:#456451;box-shadow:none}
+html[data-theme="dark"] input:focus,html[data-theme="dark"] select:focus,html[data-theme="dark"] textarea:focus{outline:2px solid #56b982;border-color:#75cfa0}
+html[data-theme="dark"] label{color:#bdd0c3}
+html[data-theme="dark"] .syncbox{background:#263d2f;border-color:#3b5946;color:#c5d9cb}
+html[data-theme="dark"] .good,html[data-theme="dark"] .dash-positive,html[data-theme="dark"] .positive{color:#83d5a6}
+html[data-theme="dark"] .bad,html[data-theme="dark"] .dash-negative,html[data-theme="dark"] .negative{color:#ff9690}
+html[data-theme="dark"] .metric{--metric-bg:#243b2e;--metric-border:#385743;--metric-color:#91ddb0;--metric-orb:#355b43;--metric-shadow:#00000020}
+html[data-theme="dark"] .grid .metric:nth-child(1),html[data-theme="dark"] .dash-kpis .dash-blue{--metric-bg:#243e30;--metric-border:#3a5b45;--metric-color:#91ddb0;--metric-orb:#365f46}
+html[data-theme="dark"] .grid .metric:nth-child(2),html[data-theme="dark"] .dash-kpis .dash-pink{--metric-bg:#3d302d;--metric-border:#5b4039;--metric-color:#f0a18d;--metric-orb:#63433a}
+html[data-theme="dark"] .grid .metric:nth-child(3),html[data-theme="dark"] .dash-kpis .dash-yellow{--metric-bg:#3c3828;--metric-border:#5a5034;--metric-color:#e6c779;--metric-orb:#615333}
+html[data-theme="dark"] .grid .metric:nth-child(4),html[data-theme="dark"] .dash-kpis .dash-teal{--metric-bg:#233b37;--metric-border:#365b52;--metric-color:#83d1c0;--metric-orb:#315b51}
+html[data-theme="dark"] .grid .metric:nth-child(5){--metric-bg:#30392b;--metric-border:#48563b;--metric-color:#bdd69a;--metric-orb:#4a5938}
+html[data-theme="dark"] .dash-welcome{background:linear-gradient(120deg,#174a36,#1d6949 62%,#27875d)}
+html[data-theme="dark"] .dash-kpis .metric span{color:#b2c7b8}
+html[data-theme="dark"] .action-meal,html[data-theme="dark"] .action-deposit{background:#294334}
+html[data-theme="dark"] .action-bazar{background:#3c302a}
+html[data-theme="dark"] .action-report{background:#303b2e}
+html[data-theme="dark"] .key-meal{background:#75cfa0}
+html[data-theme="dark"] .meal-bar{background:linear-gradient(180deg,#a0e3ba,#3aa978)}
+html[data-theme="dark"] .expense-bar{background:linear-gradient(180deg,#eeb69b,#bd7957)}
+html[data-theme="dark"] .dash-avatar,html[data-theme="dark"] .dash-rank{background:#315541;color:#c5efd4}
+html[data-theme="dark"] .dash-progress{background:#354e40}
+html[data-theme="dark"] .dash-progress i{background:linear-gradient(90deg,#35a675,#91ddb0)}
+html[data-theme="dark"] .dash-note{background:linear-gradient(120deg,#263d2f,#29392d);border-color:#3b5946;color:#d0e2d5}
+html[data-theme="dark"] .empty{color:#a8bcb0}
+html[data-theme="dark"] table{color:#e7f2ea}
+html[data-theme="dark"] th{color:#b4c8ba}
+html[data-theme="dark"] td,html[data-theme="dark"] th{border-color:#354e40}
+html[data-theme="dark"] .about-link,html[data-theme="dark"] .facebook-link{background:#294334!important;color:#bce8ca!important}
+html[data-theme="dark"] .theme-toggle{background:#ffffff24;border-color:#ffffff70;color:#fff}
+html[data-theme="dark"] .dash-leader strong{color:#e7f2ea}
+html[data-theme="dark"] .dash-action{color:#e7f2ea}
+html[data-theme="dark"] .monthbar input{background:#192b21;color:#e7f2ea;border-color:#456451}
+@media(prefers-reduced-motion:no-preference){.card,.btn,nav button,.theme-toggle{transition:background-color .18s,border-color .18s,color .18s,box-shadow .18s,transform .18s}}
+@media print{.theme-toggle{display:none!important}}
+
 </style></head><body>
-<header><h1>🍽️ Meal Manager</h1><small>Offline-first • Monthly accounts</small><div class="monthbar"><label style="color:white">Month</label><input id="month" type="month"></div></header>
+<header><button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch colour theme">☾ Dark</button><h1>🍽️ Meal Manager</h1><small>Offline-first • Monthly accounts</small><div class="monthbar"><label style="color:white">Month</label><input id="month" type="month"></div></header>
 <nav id="nav"><button data-tab="home" class="active">Overview</button><button data-tab="history">History</button><button data-tab="members">Members</button><button data-tab="meals">Meals</button><button data-tab="bazar">Bazar</button><button data-tab="reports">Reports</button><button data-tab="sync">Sync</button><button data-tab="about">About</button></nav>
 <main id="app"></main>
 <script>
@@ -216,5 +324,26 @@ $('#nav').addEventListener('click',e=>{let b=e.target.closest('button[data-tab]'
 let swipeStartX=0,swipeStartY=0;
 $('#app').addEventListener('touchstart',e=>{if(e.touches.length!==1)return;let t=e.target;if(t.closest('textarea,button,a,[contenteditable="true"]')){swipeStartX=0;return;}swipeStartX=e.touches[0].clientX;swipeStartY=e.touches[0].clientY;},{passive:true});
 $('#app').addEventListener('touchend',e=>{if(!swipeStartX||!e.changedTouches.length)return;let dx=e.changedTouches[0].clientX-swipeStartX,dy=e.changedTouches[0].clientY-swipeStartY;swipeStartX=0;if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)*1.2)moveTab(dx<0?1:-1);},{passive:true});$('#app').addEventListener('touchcancel',()=>{swipeStartX=0;swipeStartY=0;},{passive:true});
+
+// Theme preference is stored separately; meal/account data remains untouched.
+(function initTheme(){
+ const root=document.documentElement,button=document.getElementById('themeToggle');
+ let saved='light';
+ try{saved=localStorage.getItem('mealManagerTheme')||'light'}catch(e){}
+ function applyTheme(mode){
+  const dark=mode==='dark';
+  root.dataset.theme=dark?'dark':'light';
+  if(button){button.textContent=dark?'☀ Light':'☾ Dark';button.setAttribute('aria-label',dark?'Switch to light theme':'Switch to dark theme');}
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.content=dark?'#174a36':'#29966f';
+ }
+ applyTheme(saved);
+ if(button)button.addEventListener('click',()=>{
+  const next=root.dataset.theme==='dark'?'light':'dark';
+  applyTheme(next);
+  try{localStorage.setItem('mealManagerTheme',next)}catch(e){}
+ });
+})();
+
 show();
 </script></body></html>
