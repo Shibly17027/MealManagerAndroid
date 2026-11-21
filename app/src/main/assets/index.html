@@ -124,7 +124,12 @@ function renderHistoryList(){
 function editEntry(type,id){
  const d=data(),entry=d[type]?.find(x=>x.id===id);if(!entry)return;
  const date=prompt('Date (YYYY-MM-DD):',entry.date);if(date===null)return;
- if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(Date.parse(date+'T00:00:00'))||new Date(date+'T00:00:00').toISOString().slice(0,10)!==date||date.slice(0,7)!==key()){alert('Please enter a valid date within the selected month.');return;}
+ const dateMatch=/^(\d{4})-(\d{2})-(\d{2})$/.exec(date.trim());
+ if(!dateMatch){alert('Please enter a valid date within the selected month.');return;}
+ const year=Number(dateMatch[1]),month=Number(dateMatch[2]),day=Number(dateMatch[3]);
+ const daysInMonth=new Date(Date.UTC(year,month,0)).getUTCDate();
+ if(month<1||month>12||day<1||day>daysInMonth||date.trim().slice(0,7)!==key()){alert('Please enter a valid date within the selected month.');return;}
+ date=date.trim();
  if(type==='deposits'){
   const amount=prompt('Deposit amount (BDT):',entry.amount);if(amount===null)return;if(amount.trim()===''||!Number.isFinite(Number(amount))){alert('Enter a valid amount.');return;}
   entry.amount=Number(amount);
