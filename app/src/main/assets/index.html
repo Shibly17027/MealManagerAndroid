@@ -354,9 +354,23 @@ function navigateTo(next){
 }
 function moveTab(direction){let current=tabOrder.indexOf(tab),next=Math.max(0,Math.min(tabOrder.length-1,current+direction));if(next===current)return;navigateTo(tabOrder[next]);}
 $('#nav').addEventListener('click',e=>{let b=e.target.closest('button[data-tab]');if(b)navigateTo(b.dataset.tab)});
-let swipeStartX=0,swipeStartY=0;
-$('#app').addEventListener('touchstart',e=>{if(e.touches.length!==1)return;let t=e.target;if(t.closest('textarea,button,a,[contenteditable="true"]')){swipeStartX=0;return;}swipeStartX=e.touches[0].clientX;swipeStartY=e.touches[0].clientY;},{passive:true});
-$('#app').addEventListener('touchend',e=>{if(!swipeStartX||!e.changedTouches.length)return;let dx=e.changedTouches[0].clientX-swipeStartX,dy=e.changedTouches[0].clientY-swipeStartY;swipeStartX=0;if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)*1.2)moveTab(dx<0?1:-1);},{passive:true});$('#app').addEventListener('touchcancel',()=>{swipeStartX=0;swipeStartY=0;},{passive:true});
+let swipeStartX=0,swipeStartY=0,swipeStartedInHorizontalScroll=false;
+$('#app').addEventListener('touchstart',e=>{
+ if(e.touches.length!==1)return;
+ let t=e.target;
+ if(t.closest('textarea,button,a,[contenteditable="true"]')){swipeStartX=0;swipeStartedInHorizontalScroll=false;return;}
+ // Let horizontally scrollable report tables/content consume their own left-right swipes.
+ const scrollArea=t.closest('.tablewrap,[data-horizontal-scroll]');
+ swipeStartedInHorizontalScroll=!!(scrollArea&&scrollArea.scrollWidth>scrollArea.clientWidth+2);
+ swipeStartX=e.touches[0].clientX;swipeStartY=e.touches[0].clientY;
+},{passive:true});
+$('#app').addEventListener('touchend',e=>{
+ if(!swipeStartX||!e.changedTouches.length)return;
+ let dx=e.changedTouches[0].clientX-swipeStartX,dy=e.changedTouches[0].clientY-swipeStartY;
+ const blocked=swipeStartedInHorizontalScroll;swipeStartX=0;swipeStartY=0;swipeStartedInHorizontalScroll=false;
+ if(!blocked&&Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)*1.2)moveTab(dx<0?1:-1);
+},{passive:true});
+$('#app').addEventListener('touchcancel',()=>{swipeStartX=0;swipeStartY=0;swipeStartedInHorizontalScroll=false;},{passive:true});
 
 // Theme preference is stored separately; meal/account data remains untouched.
 (function initTheme(){
