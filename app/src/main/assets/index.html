@@ -13,7 +13,7 @@ nav{top:107px;padding:9px 9px 10px;gap:6px;background:#ffffffed;backdrop-filter:
 nav::-webkit-scrollbar{display:none}nav button{border:0;border-radius:12px;padding:10px 14px;color:#68748b;background:#f3f5f9;transition:background .18s,color .18s,transform .18s}nav button.active{color:#fff;background:linear-gradient(135deg,#438fe0,#657bd0);border:0;box-shadow:0 4px 10px #438fe044}nav button:active{transform:scale(.96)}
 main{padding:15px;overflow:hidden}.card{border:1px solid #e9edf4;border-radius:18px;box-shadow:0 4px 14px #293c5a0a;transition:transform .18s,box-shadow .18s}.metric{position:relative;overflow:hidden;min-height:100px;padding:15px 14px 13px}.metric:after{content:"";position:absolute;width:58px;height:58px;border-radius:50%;right:-17px;top:-18px;background:var(--metric-tint,#eaf3ff);opacity:.9}.metric strong{position:relative;z-index:1;color:var(--metric-color,#347fc9);font-size:22px}.metric small{position:relative;z-index:1;font-weight:650;color:#6e7890}.grid .metric:nth-child(1){--metric-color:#3988d4;--metric-tint:#dceeff}.grid .metric:nth-child(2){--metric-color:#d36b83;--metric-tint:#ffe5ed}.grid .metric:nth-child(3){--metric-color:#b17b22;--metric-tint:#fff1cc}.grid .metric:nth-child(4){--metric-color:#39988f;--metric-tint:#dcf5f0}.grid .metric:nth-child(5){--metric-color:#8174c6;--metric-tint:#ebe7ff}
 .sectionhead h2{color:#34435d}.btn{background:linear-gradient(135deg,#438fe0,#527acb);box-shadow:0 3px 8px #438fe033}.btn.secondary{background:#e8f2ff;color:#3979bd;box-shadow:none}.btn.danger{background:#ffebee;color:#bd5260;box-shadow:none}.pill{background:#e8f2ff;color:#3979bd}.row{border-color:#edf0f5}.row .sub,.muted,.metric small{color:#78849a}input,select{border-color:#dfe6f0;border-radius:12px}input:focus,select:focus{outline:2px solid #b8d9fb;border-color:#6eafe9}label{color:#596982}.syncbox{background:#f0f5fc}.good{color:#27896f}.bad{color:#c65362}
-#app{touch-action:pan-y;will-change:transform}#app.swipe-in-left{animation:swipeInLeft .22s cubic-bezier(.22,.75,.25,1)}#app.swipe-in-right{animation:swipeInRight .22s cubic-bezier(.22,.75,.25,1)}@keyframes swipeInLeft{from{opacity:.72;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}@keyframes swipeInRight{from{opacity:.72;transform:translateX(-30px)}to{opacity:1;transform:translateX(0)}}
+#app{touch-action:pan-y}
 @media(min-width:600px){main{padding:20px}.card{padding:17px}}
 
 
@@ -56,7 +56,7 @@ main{padding:17px 15px;overflow:hidden}.grid{gap:12px}.card{border:1px solid #e3
 <nav id="nav"><button data-tab="home" class="active">Overview</button><button data-tab="history">History</button><button data-tab="members">Members</button><button data-tab="meals">Meals</button><button data-tab="bazar">Bazar</button><button data-tab="reports">Reports</button><button data-tab="sync">Sync</button><button data-tab="about">About</button></nav>
 <main id="app"></main>
 <script>
-const APP_VERSION='1.5.7';
+const APP_VERSION='1.5.8';
 const $=s=>document.querySelector(s), money=n=>'৳ '+(Number(n)||0).toLocaleString('en-BD',{maximumFractionDigits:2}), today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}, monthNow=()=>today().slice(0,7), uid=()=>Math.random().toString(36).slice(2,10);
 let state=JSON.parse(localStorage.getItem('mealManagerData')||'null')||{members:[],months:{},settings:{endpoint:'',token:''}};let tab='home';
 function save(){localStorage.setItem('mealManagerData',JSON.stringify(state))}function key(){return $('#month').value||monthNow()}function data(){let k=key();if(!state.months[k])state.months[k]={deposits:[],meals:[],bazar:[]};return state.months[k]}
@@ -195,8 +195,6 @@ const tabOrder=['home','history','members','meals','bazar','reports','sync','abo
 let navigationBusy=false;
 function navigateTo(next){
  if(next===tab||navigationBusy)return;
- const oldIndex=tabOrder.indexOf(tab),newIndex=tabOrder.indexOf(next);
- const direction=newIndex>oldIndex?1:-1;
  navigationBusy=true;
  try{
   tab=next;
@@ -206,9 +204,8 @@ function navigateTo(next){
   const fresh=$('#app');
   if(fresh&&fresh.animate){
    fresh.animate(
-    [{transform:`translate3d(${direction*18}px,0,0)`,opacity:.65},
-     {transform:'translate3d(0,0,0)',opacity:1}],
-    {duration:155,easing:'cubic-bezier(.2,.75,.25,1)'}
+    [{opacity:.88},{opacity:1}],
+    {duration:100,easing:'ease-out'}
    );
   }
  }catch(e){/* Keep navigation usable if animation is unavailable. */}
