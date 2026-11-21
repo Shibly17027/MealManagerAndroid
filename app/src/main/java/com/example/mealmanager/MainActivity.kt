@@ -2,6 +2,9 @@ package com.example.mealmanager
 
 import android.app.Activity
 import android.os.Bundle
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.content.Intent
 import android.net.Uri
 import android.webkit.JavascriptInterface
@@ -69,6 +72,26 @@ class MainActivity : Activity() {
         if (web.canGoBack()) web.goBack() else super.onBackPressed()
     }
     inner class SheetsBridge {
+        @JavascriptInterface fun hapticFeedback(kind: String) {
+            runOnUiThread {
+                try {
+                    val vibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
+                    if (!vibrator.hasVibrator()) return@runOnUiThread
+                    val duration = when (kind) {
+                        "add" -> 30L
+                        "update" -> 45L
+                        "delete" -> 70L
+                        else -> 35L
+                    }
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        vibrator.vibrate(VibrationEffect.createOneShot(duration, VibrationEffect.DEFAULT_AMPLITUDE))
+                    } else {
+                        @Suppress("DEPRECATION")
+                        vibrator.vibrate(duration)
+                    }
+                } catch (_: Exception) { }
+            }
+        }
         @JavascriptInterface fun exportBackup(json: String) {
             runOnUiThread {
                 pendingBackup = json
