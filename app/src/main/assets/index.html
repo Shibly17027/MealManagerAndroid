@@ -48,7 +48,7 @@ let state=JSON.parse(localStorage.getItem('mealManagerData')||'null')||{members:
 function save(){localStorage.setItem('mealManagerData',JSON.stringify(state))}function key(){return $('#month').value||monthNow()}function data(){let k=key();if(!state.months[k])state.months[k]={deposits:[],meals:[],bazar:[]};return state.months[k]}
 function calc(){let d=data(),totalExpense=0,totalMeals=0,mealByMember=new Map(),depositByMember=new Map();for(const x of d.bazar)totalExpense+=Number(x.amount||0);for(const x of d.meals){let n=Number(x.count||0);totalMeals+=n;mealByMember.set(x.memberId,(mealByMember.get(x.memberId)||0)+n)}for(const x of d.deposits)depositByMember.set(x.memberId,(depositByMember.get(x.memberId)||0)+Number(x.amount||0));let rate=totalMeals?totalExpense/totalMeals:0,rows=state.members.map(m=>{let meals=mealByMember.get(m.id)||0,deposit=depositByMember.get(m.id)||0,cost=meals*rate;return {...m,meals,deposit,cost,balance:deposit-cost}});return {d,totalExpense,totalMeals,rate,rows,totalDeposit:rows.reduce((s,x)=>s+x.deposit,0),totalRemaining:rows.reduce((s,x)=>s+x.balance,0)}}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function show(){const needsCalc=['home','members','meals','bazar','reports'].includes(tab);const c=needsCalc?calc():null;const memberNameById=tab==='members'?new Map(state.members.map(m=>[m.id,m.name])):null;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));let html='';
+function show(){const c=tab==='members'?{d:data()}:(['home','meals','bazar','reports'].includes(tab)?calc():null);const memberNameById=tab==='members'?new Map(state.members.map(m=>[m.id,m.name])):null;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));let html='';
 if(tab==='home'){html=`<div class="grid"><div class="card metric"><small>Net deposits / adjustments</small><strong>${money(c.totalDeposit)}</strong></div><div class="card metric"><small>Bazar expenses</small><strong>${money(c.totalExpense)}</strong></div><div class="card metric"><small>Total remaining balance</small><strong>${money(c.totalRemaining)}</strong></div><div class="card metric"><small>Total meal units</small><strong>${c.totalMeals}</strong></div><div class="card metric"><small>Meal rate</small><strong>${money(c.rate)}</strong></div></div><div class="sectionhead"><h2>Member balances</h2><span class="pill">${c.rows.length} members</span></div><div class="card">${c.rows.length?c.rows.map(m=>`<div class="row"><div><b>${esc(m.name)}</b><div class="sub">${m.meals} meals · Deposited ${money(m.deposit)}</div></div><div class="amount">${money(m.balance)}<div class="sub">${m.balance<0?'Due':'Remaining'}</div></div></div>`).join(''):'<div class="empty">Add members to start your monthly account.</div>'}</div><p class="hint">Meal rate = total bazar expenses ÷ total meal units. Individual meal cost = member meal units × meal rate. Remaining balance = deposits − individual meal cost.</p>`}
 if(tab==='members'){html=`<div class="sectionhead"><h2>Members</h2><span class="pill">${state.members.length} total</span></div><div class="card"><form id="memberForm"><label>Member name</label><input name="name" required placeholder="Enter member name"><button class="btn">+ Add member</button></form></div><div class="card"><div class="sectionhead" style="margin-top:0"><h2>Record deposit</h2></div><form id="depositForm"><label>Member</label><select name="memberId" required>${state.members.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('')}</select><div class="formgrid"><div><label>Date</label><input name="date" type="date" value="${today().slice(0,7)===key()?today():key()+'-01'}" required></div><div><label>Amount (৳)</label><input name="amount" type="number" step="0.01" required placeholder="e.g. 1000 or -500"></div></div><p class="hint">Enter a positive amount for cash received. Enter a negative amount for a previous-month due (e.g. -500).</p><button class="btn" ${!state.members.length?'disabled':''}>+ Add deposit</button></form></div><div class="card"><b>Members</b>${state.members.length?state.members.map((m,i)=>`<div class="row"><div><b>${i+1}. ${esc(m.name)}</b></div><button class="btn danger small" onclick="removeMember('${m.id}')">Remove</button></div>`).join(''):'<div class="empty">No members added yet.</div>'}</div><div class="card"><b>Deposits this month</b>${c.d.deposits.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<div class="row"><div><b>${esc(memberNameById.get(x.memberId)||'Removed member')}</b><div class="sub">${x.date}</div></div><div class="amount">${money(x.amount)} <button class="btn danger small" onclick="removeEntry('deposits','${x.id}')">×</button></div></div>`).join('')||'<div class="empty">No deposits recorded for this month.</div>'}</div>`}
 if(tab==='meals'){let days=new Date(Number(key().slice(0,4)),Number(key().slice(5,7)),0).getDate();html=`<div class="sectionhead"><h2>Daily meal entry</h2><span class="pill">${key()}</span></div><div class="card"><form id="mealForm"><label>Date</label><input name="date" type="date" value="${key()}-01" min="${key()}-01" max="${key()}-${String(days).padStart(2,'0')}" required><label>Member</label><select name="memberId" required>${state.members.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('')}</select><label>Meal units (e.g. 1, 0.5)</label><input name="count" type="number" min="0" step="0.5" value="1" required><button class="btn" ${!state.members.length?'disabled':''}>Save meal</button></form></div><div class="card"><div class="sectionhead" style="margin-top:0"><h2>Meal entries</h2></div>${c.d.meals.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>{let m=state.members.find(z=>z.id===x.memberId);return `<div class="row"><div><b>${esc(m?.name||'Removed member')}</b><div class="sub">${x.date}</div></div><div class="amount">${x.count} <button class="btn danger small" onclick="removeEntry('meals','${x.id}')">×</button></div></div>`}).join('')||'<div class="empty">No meal entries for this month.</div>'}</div>`}
@@ -91,31 +91,25 @@ window.restoreFromNative=function(raw){try{let x=JSON.parse(raw);if(!x.members||
 $('#month').value=monthNow();$('#month').addEventListener('change',show);
 const tabOrder=['home','members','meals','bazar','reports','sync','about'];
 let navigationBusy=false;
-async function navigateTo(next){
+function navigateTo(next){
  if(next===tab||navigationBusy)return;
  const oldIndex=tabOrder.indexOf(tab),newIndex=tabOrder.indexOf(next);
  const direction=newIndex>oldIndex?1:-1;
  navigationBusy=true;
- const app=$('#app');
  try{
-  if(app&&app.animate){
-   await app.animate(
-    [{transform:'translate3d(0,0,0)',opacity:1},{transform:`translate3d(${-direction*22}px,0,0)`,opacity:.35}],
-    {duration:105,easing:'ease-in',fill:'forwards'}
-   ).finished;
-  }
   tab=next;
   show();
   const active=$('#nav button.active');
   if(active)active.scrollIntoView({behavior:'auto',block:'nearest',inline:'center'});
   const fresh=$('#app');
   if(fresh&&fresh.animate){
-   await fresh.animate(
-    [{transform:`translate3d(${direction*30}px,0,0)`,opacity:.35},{transform:'translate3d(0,0,0)',opacity:1}],
-    {duration:190,easing:'cubic-bezier(.2,.75,.25,1)',fill:'both'}
-   ).finished;
+   fresh.animate(
+    [{transform:`translate3d(${direction*18}px,0,0)`,opacity:.65},
+     {transform:'translate3d(0,0,0)',opacity:1}],
+    {duration:155,easing:'cubic-bezier(.2,.75,.25,1)'}
+   );
   }
- }catch(e){/* Navigation remains usable if an animation is interrupted. */}
+ }catch(e){/* Keep navigation usable if animation is unavailable. */}
  finally{navigationBusy=false;}
 }
 function moveTab(direction){let current=tabOrder.indexOf(tab),next=Math.max(0,Math.min(tabOrder.length-1,current+direction));if(next===current)return;navigateTo(tabOrder[next]);}
