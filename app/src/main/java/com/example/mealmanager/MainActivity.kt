@@ -69,7 +69,17 @@ class MainActivity : Activity() {
     private var pendingCsv: String = ""
 
     override fun onBackPressed() {
-        if (web.canGoBack()) web.goBack() else super.onBackPressed()
+        if (!::web.isInitialized) {
+            super.onBackPressed()
+            return
+        }
+        web.evaluateJavascript(
+            "(function(){return typeof window.handleAndroidBack === 'function' ? window.handleAndroidBack() : false;})()"
+        ) { result ->
+            if (result != "true") {
+                super@MainActivity.onBackPressed()
+            }
+        }
     }
     inner class SheetsBridge {
         @JavascriptInterface fun hapticFeedback(kind: String) {
