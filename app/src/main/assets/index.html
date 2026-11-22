@@ -13,7 +13,8 @@ nav{top:107px;padding:9px 9px 10px;gap:6px;background:#ffffffed;backdrop-filter:
 nav::-webkit-scrollbar{display:none}nav button{border:0;border-radius:12px;padding:10px 14px;color:#68748b;background:#f3f5f9;transition:background .18s,color .18s,transform .18s}nav button.active{color:#fff;background:linear-gradient(135deg,#438fe0,#657bd0);border:0;box-shadow:0 4px 10px #438fe044}nav button:active{transform:scale(.96)}
 main{padding:15px;overflow:hidden}.card{border:1px solid #e9edf4;border-radius:18px;box-shadow:0 4px 14px #293c5a0a;transition:transform .18s,box-shadow .18s}.metric{position:relative;overflow:hidden;min-height:100px;padding:15px 14px 13px}.metric:after{content:"";position:absolute;width:58px;height:58px;border-radius:50%;right:-17px;top:-18px;background:var(--metric-tint,#eaf3ff);opacity:.9}.metric strong{position:relative;z-index:1;color:var(--metric-color,#347fc9);font-size:22px}.metric small{position:relative;z-index:1;font-weight:650;color:#6e7890}.grid .metric:nth-child(1){--metric-color:#3988d4;--metric-tint:#dceeff}.grid .metric:nth-child(2){--metric-color:#d36b83;--metric-tint:#ffe5ed}.grid .metric:nth-child(3){--metric-color:#b17b22;--metric-tint:#fff1cc}.grid .metric:nth-child(4){--metric-color:#39988f;--metric-tint:#dcf5f0}.grid .metric:nth-child(5){--metric-color:#8174c6;--metric-tint:#ebe7ff}
 .sectionhead h2{color:#34435d}.btn{background:linear-gradient(135deg,#438fe0,#527acb);box-shadow:0 3px 8px #438fe033}.btn.secondary{background:#e8f2ff;color:#3979bd;box-shadow:none}.btn.danger{background:#ffebee;color:#bd5260;box-shadow:none}.pill{background:#e8f2ff;color:#3979bd}.row{border-color:#edf0f5}.row .sub,.muted,.metric small{color:#78849a}input,select{border-color:#dfe6f0;border-radius:12px}input:focus,select:focus{outline:2px solid #b8d9fb;border-color:#6eafe9}label{color:#596982}.syncbox{background:#f0f5fc}.good{color:#27896f}.bad{color:#c65362}
-#app{touch-action:pan-y}
+#app{touch-action:pan-y;min-height:calc(100vh - 175px)}
+.tablewrap{touch-action:pan-x pan-y}
 @media(min-width:600px){main{padding:20px}.card{padding:17px}}
 
 
@@ -180,7 +181,7 @@ html[data-theme="dark"] .mm-dialog h3{color:#a6e1b9}html[data-theme="dark"] .mm-
 <nav id="nav"><button data-tab="home" class="active">Overview</button><button data-tab="history">History</button><button data-tab="members">Members</button><button data-tab="meals">Meals</button><button data-tab="bazar">Bazar</button><button data-tab="reports">Reports</button><button data-tab="sync">Sync</button><button data-tab="about">About</button><button data-tab="settings">Settings</button></nav>
 <main id="app"></main>
 <script>
-const APP_VERSION='1.9.5';
+const APP_VERSION='1.9.6';
 const $=s=>document.querySelector(s), money=n=>'৳ '+(Number(n)||0).toLocaleString('en-BD',{maximumFractionDigits:2}), today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}, monthNow=()=>today().slice(0,7), uid=()=>Math.random().toString(36).slice(2,10);
 let state=JSON.parse(localStorage.getItem('mealManagerData')||'null')||{members:[],months:{},settings:{endpoint:'',token:''}};let tab='home';
 function hapticFeedback(kind='save'){try{if(window.MealBridge&&typeof MealBridge.hapticFeedback==='function'){MealBridge.hapticFeedback(kind);return}}catch(e){}try{if(navigator.vibrate){const ms=kind==='delete'?65:kind==='update'?45:kind==='add'?30:35;navigator.vibrate(ms)}}catch(e){}}
@@ -356,23 +357,25 @@ function navigateTo(next){
 }
 function moveTab(direction){let current=tabOrder.indexOf(tab),next=Math.max(0,Math.min(tabOrder.length-1,current+direction));if(next===current)return;navigateTo(tabOrder[next]);}
 $('#nav').addEventListener('click',e=>{let b=e.target.closest('button[data-tab]');if(b)navigateTo(b.dataset.tab)});
-let swipeStartX=0,swipeStartY=0,swipeStartedInHorizontalScroll=false;
-$('#app').addEventListener('touchstart',e=>{
- if(e.touches.length!==1)return;
- let t=e.target;
- if(t.closest('textarea,button,a,[contenteditable="true"]')){swipeStartX=0;swipeStartedInHorizontalScroll=false;return;}
- // Let horizontally scrollable report tables/content consume their own left-right swipes.
- const scrollArea=t.closest('.tablewrap,[data-horizontal-scroll]');
+let swipeStartX=null,swipeStartY=null,swipeStartedInHorizontalScroll=false;
+const appSwipeArea=$('#app');
+appSwipeArea.addEventListener('touchstart',e=>{
+ if(e.touches.length!==1){swipeStartX=null;return;}
+ const target=e.target;
+ // Do not hijack deliberate taps on action buttons or links. Select controls remain swipeable
+ // around their edges so the last Settings tab can navigate back to the previous tab.
+ if(target.closest('button,a,textarea,[contenteditable="true"]')){swipeStartX=null;swipeStartedInHorizontalScroll=false;return;}
+ const scrollArea=target.closest('.tablewrap,[data-horizontal-scroll]');
  swipeStartedInHorizontalScroll=!!(scrollArea&&scrollArea.scrollWidth>scrollArea.clientWidth+2);
  swipeStartX=e.touches[0].clientX;swipeStartY=e.touches[0].clientY;
 },{passive:true});
-$('#app').addEventListener('touchend',e=>{
- if(!swipeStartX||!e.changedTouches.length)return;
- let dx=e.changedTouches[0].clientX-swipeStartX,dy=e.changedTouches[0].clientY-swipeStartY;
- const blocked=swipeStartedInHorizontalScroll;swipeStartX=0;swipeStartY=0;swipeStartedInHorizontalScroll=false;
- if(!blocked&&Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)*1.2)moveTab(dx<0?1:-1);
+appSwipeArea.addEventListener('touchend',e=>{
+ if(swipeStartX===null||!e.changedTouches.length)return;
+ const dx=e.changedTouches[0].clientX-swipeStartX,dy=e.changedTouches[0].clientY-swipeStartY;
+ const blocked=swipeStartedInHorizontalScroll;swipeStartX=null;swipeStartY=null;swipeStartedInHorizontalScroll=false;
+ if(!blocked&&Math.abs(dx)>35&&Math.abs(dx)>Math.abs(dy)*1.15)moveTab(dx<0?1:-1);
 },{passive:true});
-$('#app').addEventListener('touchcancel',()=>{swipeStartX=0;swipeStartY=0;swipeStartedInHorizontalScroll=false;},{passive:true});
+appSwipeArea.addEventListener('touchcancel',()=>{swipeStartX=null;swipeStartY=null;swipeStartedInHorizontalScroll=false;},{passive:true});
 
 // Theme preference is stored separately; meal/account data remains untouched.
 (function initTheme(){
@@ -408,13 +411,76 @@ const BN={
 'MONTHLY OVERVIEW':'মাসিক সারসংক্ষেপ','Your meal account':'আপনার মিলের হিসাব','Net received / adjustments':'মোট জমা / সমন্বয়','Bazar expenses':'বাজার খরচ','Remaining balance':'অবশিষ্ট ব্যালেন্স','Deposits minus meal costs':'জমা থেকে মিলের খরচ বাদ','Add meals':'মিল যোগ করুন','Daily entries':'দৈনিক এন্ট্রি','Add bazar':'বাজার যোগ করুন','Record expense':'খরচের হিসাব','Add deposit':'জমা যোগ করুন','Member payment':'সদস্যের জমা','View report':'রিপোর্ট দেখুন','Monthly summary':'মাসিক সারসংক্ষেপ','Activity overview':'কার্যক্রমের সারসংক্ষেপ','active days':'দিন সক্রিয়','Daily activity':'দৈনিক কার্যক্রম','Meal units and bazar spending by date':'তারিখ অনুযায়ী মিল ও বাজার খরচ','Meals':'মিল','Bazar':'বাজার','Lower activity':'কম কার্যক্রম','Higher activity':'বেশি কার্যক্রম','Your daily activity chart will appear when meals or bazar entries are added.':'মিল বা বাজারের এন্ট্রি যোগ করলে দৈনিক কার্যক্রমের চার্ট দেখা যাবে।','Top 4':'সেরা ৪','Add members to start your monthly account.':'মাসিক হিসাব শুরু করতে সদস্য যোগ করুন।','Meal totals will appear here.':'এখানে মিলের মোট হিসাব দেখা যাবে।','Meal rate = bazar expenses ÷ meal units. Member balance = deposits − (member meals × meal rate).':'মিল রেট = বাজার খরচ ÷ মোট মিল। সদস্যের ব্যালেন্স = জমা − (সদস্যের মিল × মিল রেট)।','No member has a negative balance this month.':'এই মাসে কোনো সদস্যের ব্যালেন্স ঋণাত্মক নয়।','member(s) currently have a due balance.':'জন সদস্যের বর্তমানে বকেয়া রয়েছে।',
 'Choose a member':'সদস্য নির্বাচন করুন','Enter member name':'সদস্যের নাম লিখুন','+ Add member':'সদস্য যোগ করুন','Record deposit':'জমার হিসাব','Member':'সদস্য','Amount (৳)':'পরিমাণ (৳)','Enter a positive amount for cash received. Enter a negative amount for a previous-month due (e.g. -500).':'টাকা জমা হলে ধনাত্মক পরিমাণ লিখুন। আগের মাসের বকেয়া হলে ঋণাত্মক পরিমাণ লিখুন (যেমন -৫০০)।','Remove':'সরান','No members added yet.':'এখনো কোনো সদস্য যোগ করা হয়নি।','Deposits this month':'এই মাসের জমা','No deposits recorded for this month.':'এই মাসে কোনো জমা রেকর্ড করা হয়নি।','Daily meal entry':'দৈনিক মিল এন্ট্রি','Meal units (e.g. 1, 0.5)':'মিলের পরিমাণ (যেমন ১, ০.৫)','Save meal':'মিল সংরক্ষণ','Meal entries':'মিলের এন্ট্রি','No meal entries for this month.':'এই মাসে কোনো মিলের এন্ট্রি নেই।','Buyer / name':'ক্রেতা / নাম','Who paid?':'কে টাকা দিয়েছেন?','Note (optional)':'নোট (ঐচ্ছিক)','Rice, vegetables, etc.':'চাল, সবজি ইত্যাদি','+ Add expense':'খরচ যোগ করুন','No expenses entered this month.':'এই মাসে কোনো খরচ যোগ করা হয়নি।','Monthly report':'মাসিক রিপোর্ট','Unallocated expense':'বণ্টন না করা খরচ','Net deposit':'নিট জমা','Meal cost':'মিলের খরচ','Balance':'ব্যালেন্স','Export report PDF':'PDF রিপোর্ট এক্সপোর্ট','Export report CSV':'CSV রিপোর্ট এক্সপোর্ট','Showing a read-only record of transactions for the selected month.':'নির্বাচিত মাসের লেনদেনের শুধুমাত্র দেখার উপযোগী তালিকা।','Removed member':'অপসারিত সদস্য','Choose which transactions to display.':'কোন ধরনের লেনদেন দেখাতে চান তা নির্বাচন করুন।','Transaction type':'লেনদেনের ধরন','All transactions':'সব লেনদেন','Deposit':'জমা','Meal entry':'মিলের এন্ট্রি','Bazar expense':'বাজার খরচ','Edit date':'তারিখ সম্পাদনা','Please enter a valid date within the selected month.':'নির্বাচিত মাসের মধ্যে একটি সঠিক তারিখ লিখুন।','Edit note':'নোট সম্পাদনা','Edit meal units':'মিলের পরিমাণ সম্পাদনা','Remove this member? Existing historical entries are retained.':'এই সদস্যকে সরাবেন? আগের হিসাব সংরক্ষিত থাকবে।','Only this meal entry will be deleted.':'শুধু এই মিলের এন্ট্রিটি মুছে যাবে।','Only this bazar entry will be deleted.':'শুধু এই বাজারের এন্ট্রিটি মুছে যাবে।','Only this deposit entry will be deleted.':'শুধু এই জমার এন্ট্রিটি মুছে যাবে।'
 };
-function translateText(value){if(currentLanguage!=='bn')return value;const raw=value;const trimmed=raw.trim();if(!trimmed)return raw;if(BN[trimmed])return raw.replace(trimmed,BN[trimmed]);return raw;}
-function translateElement(root=document){if(currentLanguage!=='bn')return;const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while(n=walker.nextNode()){if(n.parentElement?.closest('script,style,textarea,[contenteditable="true"]'))continue;const translated=translateText(n.nodeValue);if(translated!==n.nodeValue)n.nodeValue=translated}root.querySelectorAll?.('[placeholder],[aria-label],[title]').forEach(el=>{for(const a of ['placeholder','aria-label','title'])if(el.hasAttribute(a)){const v=el.getAttribute(a);if(BN[v])el.setAttribute(a,BN[v])}});}
-function setAppLanguage(lang){currentLanguage=lang==='bn'?'bn':'en';try{localStorage.setItem('mealManagerLanguage',currentLanguage)}catch(e){}document.documentElement.lang=currentLanguage==='bn'?'bn':'en';show();translateElement(document);}
-const languageObserver=new MutationObserver(records=>{if(currentLanguage!=='bn')return;for(const r of records){if(r.type==='childList')r.addedNodes.forEach(n=>{if(n.nodeType===Node.TEXT_NODE){const translated=translateText(n.nodeValue);if(translated!==n.nodeValue)n.nodeValue=translated}else if(n.nodeType===Node.ELEMENT_NODE)translateElement(n)});else if(r.type==='characterData'){const translated=translateText(r.target.nodeValue);if(translated!==r.target.nodeValue)r.target.nodeValue=translated}}});
-languageObserver.observe(document.body,{subtree:true,childList:true,characterData:true});
+// Keep each node's original English text so switching back to English is immediate
+// and does not require restarting the app. The observer only translates genuine new changes.
+const originalTextByNode=new WeakMap();
+const lastAppliedTextByNode=new WeakMap();
+const originalAttrsByElement=new WeakMap();
+const lastAppliedAttrsByElement=new WeakMap();
+function translatedValue(original,lang){
+ if(lang==='bn'){
+  const trimmed=original.trim();
+  if(!trimmed||!BN[trimmed])return original;
+  return original.replace(trimmed,BN[trimmed]);
+ }
+ return original;
+}
+function processTextNode(node,lang,externalChange=false){
+ if(!node||node.nodeType!==Node.TEXT_NODE)return;
+ const current=node.nodeValue;
+ let original=originalTextByNode.get(node);
+ const last=lastAppliedTextByNode.get(node);
+ if(original===undefined|| (externalChange && last!==undefined && current!==last)){
+  original=current;originalTextByNode.set(node,original);
+ }
+ const desired=translatedValue(original,lang);
+ if(current!==desired){lastAppliedTextByNode.set(node,desired);node.nodeValue=desired;}
+ else lastAppliedTextByNode.set(node,desired);
+}
+function processAttributes(el,lang){
+ if(!el||el.nodeType!==Node.ELEMENT_NODE)return;
+ let originals=originalAttrsByElement.get(el);if(!originals){originals={};originalAttrsByElement.set(el,originals)}
+ let applied=lastAppliedAttrsByElement.get(el);if(!applied){applied={};lastAppliedAttrsByElement.set(el,applied)}
+ for(const attr of ['placeholder','aria-label','title']){
+  if(!el.hasAttribute(attr))continue;
+  const current=el.getAttribute(attr);
+  if(originals[attr]===undefined||(applied[attr]!==undefined&&current!==applied[attr]))originals[attr]=current;
+  const desired=translatedValue(originals[attr],lang);
+  if(current!==desired)el.setAttribute(attr,desired);
+  applied[attr]=desired;
+ }
+}
+function translateElement(root=document,lang=currentLanguage){
+ const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let node;
+ while(node=walker.nextNode()){
+  if(node.parentElement?.closest('script,style,textarea,[contenteditable="true"]'))continue;
+  processTextNode(node,lang,false);
+ }
+ if(root.nodeType===Node.ELEMENT_NODE)processAttributes(root,lang);
+ root.querySelectorAll?.('[placeholder],[aria-label],[title]').forEach(el=>processAttributes(el,lang));
+}
+function setAppLanguage(lang){
+ currentLanguage=lang==='bn'?'bn':'en';
+ try{localStorage.setItem('mealManagerLanguage',currentLanguage)}catch(e){}
+ document.documentElement.lang=currentLanguage==='bn'?'bn':'en';
+ show();
+ translateElement(document,currentLanguage);
+}
+const languageObserver=new MutationObserver(records=>{
+ for(const record of records){
+  if(record.type==='childList'){
+   record.addedNodes.forEach(node=>{
+    if(node.nodeType===Node.TEXT_NODE)processTextNode(node,currentLanguage,false);
+    else if(node.nodeType===Node.ELEMENT_NODE)translateElement(node,currentLanguage);
+   });
+  }else if(record.type==='characterData'){
+   // Ignore our own last-applied value; otherwise treat app-written text as fresh English source.
+   processTextNode(record.target,currentLanguage,true);
+  }else if(record.type==='attributes')processAttributes(record.target,currentLanguage);
+ }
+});
+languageObserver.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['placeholder','aria-label','title']});
 document.documentElement.lang=currentLanguage==='bn'?'bn':'en';
-
 show();
-translateElement(document);
+translateElement(document,currentLanguage);
 </script></body></html>
