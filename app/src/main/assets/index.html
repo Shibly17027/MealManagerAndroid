@@ -177,7 +177,7 @@ html[data-theme="dark"] .mm-dialog h3{color:#a6e1b9}html[data-theme="dark"] .mm-
 /* Read-only, theme-matched transaction history */
 .history-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 14px;margin:0 0 9px;border:1px solid #e0ebe1;border-radius:15px;background:linear-gradient(135deg,#fffefb,#f5f9f3)}.history-item:last-child{margin-bottom:0}.history-item-main{min-width:0;flex:1}.history-item-main b{display:block;overflow-wrap:anywhere;color:#244237}.history-item-value{font-weight:750;white-space:nowrap}.history-item .sub{margin-top:4px}html[data-theme="dark"] .history-item{background:linear-gradient(135deg,#263e30,#1d3327);border-color:#456451}html[data-theme="dark"] .history-item-main b{color:#e7f2ea}
 /* Subtle tab transition: slightly softer than v1.9.7 without slowing navigation */
-#app.tab-enter{animation:mmTabEnter .14s cubic-bezier(.2,.7,.25,1) both;will-change:transform,opacity}
+#app.tab-enter{animation:mmTabEnter .12s cubic-bezier(.2,.7,.25,1) both;will-change:transform,opacity}
 @keyframes mmTabEnter{from{opacity:.94;transform:translate3d(var(--tab-enter-x,8px),0,0)}to{opacity:1;transform:translate3d(0,0,0)}}
 @media(prefers-reduced-motion:reduce){#app.tab-enter{animation:none;will-change:auto}}
 </style></head><body>
@@ -185,7 +185,7 @@ html[data-theme="dark"] .mm-dialog h3{color:#a6e1b9}html[data-theme="dark"] .mm-
 <nav id="nav"><button data-tab="home" class="active">Overview</button><button data-tab="history">History</button><button data-tab="members">Members</button><button data-tab="meals">Meals</button><button data-tab="bazar">Bazar</button><button data-tab="reports">Reports</button><button data-tab="sync">Sync</button><button data-tab="about">About</button><button data-tab="settings">Settings</button></nav>
 <main id="app"></main>
 <script>
-const APP_VERSION='1.9.9';
+const APP_VERSION='1.10.0';
 const $=s=>document.querySelector(s), money=n=>'৳ '+(Number(n)||0).toLocaleString('en-BD',{maximumFractionDigits:2}), today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}, monthNow=()=>today().slice(0,7), uid=()=>Math.random().toString(36).slice(2,10);
 let state=JSON.parse(localStorage.getItem('mealManagerData')||'null')||{members:[],months:{},settings:{endpoint:'',token:''}};let tab='home';
 function hapticFeedback(kind='save'){try{if(window.MealBridge&&typeof MealBridge.hapticFeedback==='function'){MealBridge.hapticFeedback(kind);return}}catch(e){}try{if(navigator.vibrate){const ms=kind==='delete'?65:kind==='update'?45:kind==='add'?30:35;navigator.vibrate(ms)}}catch(e){}}
