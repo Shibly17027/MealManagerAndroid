@@ -244,7 +244,7 @@ class MainActivity : Activity() {
                 val manager = getSystemService(PRINT_SERVICE) as PrintManager
                 val adapter = view.createPrintDocumentAdapter("Meal Manager Monthly Report")
                 val attributes = PrintAttributes.Builder()
-                    .setMediaSize(PrintAttributes.MediaSize.ISO_A3.asLandscape())
+                    .setMediaSize(PrintAttributes.MediaSize.ISO_A4.asLandscape())
                     .setResolution(PrintAttributes.Resolution("pdf", "PDF", 300, 300))
                     .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
                     .build()
