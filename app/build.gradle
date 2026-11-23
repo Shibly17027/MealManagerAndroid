@@ -22,8 +22,8 @@ android {
         applicationId 'com.example.mealmanager'
         minSdk 23
         targetSdk 33
-        versionCode 39
-        versionName '2.0.4'
+        versionCode 40
+        versionName '2.0.5'
     }
     buildTypes {
         release {
