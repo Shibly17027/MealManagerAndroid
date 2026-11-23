@@ -186,7 +186,7 @@ html[data-theme="dark"] .mm-dialog h3{color:#a6e1b9}html[data-theme="dark"] .mm-
 <nav id="nav"><button data-tab="home" class="active">Overview</button><button data-tab="history">History</button><button data-tab="members">Members</button><button data-tab="meals">Meals</button><button data-tab="bazar">Bazar</button><button data-tab="reports">Reports</button><button data-tab="sync">Sync</button><button data-tab="about">About</button><button data-tab="settings">Settings</button></nav>
 <main id="app"></main>
 <script>
-const APP_VERSION='2.0.2';
+const APP_VERSION='2.0.3';
 const $=s=>document.querySelector(s), money=n=>'৳ '+(Number(n)||0).toLocaleString('en-BD',{maximumFractionDigits:2}), today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}, monthNow=()=>today().slice(0,7), uid=()=>Math.random().toString(36).slice(2,10);
 let state=JSON.parse(localStorage.getItem('mealManagerData')||'null')||{members:[],months:{},settings:{endpoint:'',token:''}};let tab='home';
 function hapticFeedback(kind='save'){try{if(window.MealBridge&&typeof MealBridge.hapticFeedback==='function'){MealBridge.hapticFeedback(kind);return}}catch(e){}try{if(navigator.vibrate){const ms=kind==='delete'?65:kind==='update'?45:kind==='add'?30:35;navigator.vibrate(ms)}}catch(e){}}
