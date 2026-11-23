@@ -13,6 +13,9 @@ import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.webkit.WebResourceRequest
+import android.widget.FrameLayout
+import android.view.ViewGroup
 import android.print.PrintManager
 import android.print.PrintAttributes
 import java.net.HttpURLConnection
@@ -22,6 +25,7 @@ import java.io.OutputStream
 
 class MainActivity : Activity() {
     private lateinit var web: WebView
+    private lateinit var root: FrameLayout
     private var reportWebView: WebView? = null
     private var activePrintJob: android.print.PrintJob? = null
     private var printInProgress = false
@@ -46,7 +50,12 @@ class MainActivity : Activity() {
         }
         web.webChromeClient = WebChromeClient()
         web.addJavascriptInterface(SheetsBridge(), "MealBridge")
-        setContentView(web)
+        root = FrameLayout(this)
+        root.addView(web, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        ))
+        setContentView(root)
         web.loadUrl("file:///android_asset/index.html")
     }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -72,6 +81,15 @@ class MainActivity : Activity() {
     }
     private var pendingBackup: String = ""
     private var pendingCsv: String = ""
+
+    override fun onDestroy() {
+        printHandler.removeCallbacksAndMessages(null)
+        reportWebView?.let { view ->
+            try { root.removeView(view); view.destroy() } catch (_: Exception) { }
+        }
+        reportWebView = null
+        super.onDestroy()
+    }
 
     override fun onBackPressed() {
         if (!::web.isInitialized) {
@@ -148,27 +166,56 @@ class MainActivity : Activity() {
                 }
                 printInProgress = true
                 try {
+                    // A WebView that is never attached to a window may not complete its
+                    // visual-state callback. Attach it behind the app WebView so it can
+                    // lay out and render before Android's print adapter is created.
                     val printView = WebView(this@MainActivity)
                     reportWebView = printView
                     printView.settings.javaScriptEnabled = false
                     printView.settings.domStorageEnabled = false
                     printView.setBackgroundColor(android.graphics.Color.WHITE)
+                    printView.alpha = 0.01f
+                    root.addView(printView, FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    ))
+                    web.bringToFront()
+
                     var printStarted = false
+                    var loadFinished = false
+                    fun launchPrintOnce() {
+                        if (printStarted || reportWebView !== printView) return
+                        printStarted = true
+                        printView.postDelayed({ startReportPrint(printView) }, 250L)
+                    }
                     printView.webViewClient = object : WebViewClient() {
                         override fun onPageFinished(view: WebView, url: String?) {
-                            if (printStarted) return
-                            printStarted = true
-                            // Wait until WebView has committed its visual state before handing
-                            // the document to Android's print spooler. This avoids intermittent
-                            // empty/zero-byte PDF output on slower devices.
+                            if (loadFinished) return
+                            loadFinished = true
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                                view.postVisualStateCallback(1L, object : WebView.VisualStateCallback() {
-                                    override fun onComplete(requestId: Long) {
-                                        view.postDelayed({ startReportPrint(view) }, 350L)
-                                    }
-                                })
+                                try {
+                                    view.postVisualStateCallback(1L, object : WebView.VisualStateCallback() {
+                                        override fun onComplete(requestId: Long) {
+                                            view.post { launchPrintOnce() }
+                                        }
+                                    })
+                                } catch (_: Exception) {
+                                    view.postDelayed({ launchPrintOnce() }, 500L)
+                                }
                             } else {
-                                view.postDelayed({ startReportPrint(view) }, 700L)
+                                view.postDelayed({ launchPrintOnce() }, 700L)
+                            }
+                            // Safety fallback in case the visual-state callback is not delivered.
+                            view.postDelayed({ launchPrintOnce() }, 2500L)
+                        }
+
+                        override fun onReceivedError(
+                            view: WebView,
+                            request: WebResourceRequest,
+                            error: android.webkit.WebResourceError
+                        ) {
+                            if (request.isForMainFrame && reportWebView === printView) {
+                                failReportPrint("Could not load the PDF report")
                             }
                         }
                     }
@@ -179,10 +226,14 @@ class MainActivity : Activity() {
                         "UTF-8",
                         null
                     )
+                    // Prevent a permanently locked export state if WebView never finishes loading.
+                    printView.postDelayed({
+                        if (!loadFinished && reportWebView === printView) {
+                            failReportPrint("PDF report preparation timed out. Please try again.")
+                        }
+                    }, 15000L)
                 } catch (e: Exception) {
-                    printInProgress = false
-                    val msg = org.json.JSONObject.quote(e.message ?: "Could not prepare PDF report")
-                    web.evaluateJavascript("alert('PDF export error: '+$msg)", null)
+                    failReportPrint(e.message ?: "Could not prepare PDF report")
                 }
             }
         }
@@ -205,9 +256,7 @@ class MainActivity : Activity() {
                 activePrintJob = job
                 watchReportPrintJob(job, view)
             } catch (e: Exception) {
-                printInProgress = false
-                val msg = org.json.JSONObject.quote(e.message ?: "Could not start PDF export")
-                web.evaluateJavascript("alert('PDF export error: '+$msg)", null)
+                failReportPrint(e.message ?: "Could not start PDF export")
             }
         }
 
@@ -217,17 +266,32 @@ class MainActivity : Activity() {
                 if (job.isCompleted || job.isCancelled || job.isFailed) {
                     activePrintJob = null
                     printInProgress = false
-                    // Keep the WebView alive until Android has finished rendering the PDF.
-                    view.postDelayed({
-                        if (reportWebView === view) {
-                            view.destroy()
-                            reportWebView = null
-                        }
-                    }, 1500L)
+                    // Keep the WebView briefly after completion; the print spooler may still
+                    // be finishing its final read of the document adapter.
+                    view.postDelayed({ releaseReportWebView(view) }, 1500L)
                 } else {
                     watchReportPrintJob(job, view)
                 }
             }, 1000L)
+        }
+
+        private fun failReportPrint(message: String) {
+            printInProgress = false
+            activePrintJob = null
+            val view = reportWebView
+            if (view != null) releaseReportWebView(view)
+            val quoted = org.json.JSONObject.quote(message)
+            web.evaluateJavascript("alert('PDF export error: '+$quoted)", null)
+        }
+
+        private fun releaseReportWebView(view: WebView) {
+            if (reportWebView !== view) return
+            try {
+                root.removeView(view)
+                view.stopLoading()
+                view.destroy()
+            } catch (_: Exception) { }
+            reportWebView = null
         }
 
         @JavascriptInterface fun request(method: String, endpoint: String, payload: String): String {
