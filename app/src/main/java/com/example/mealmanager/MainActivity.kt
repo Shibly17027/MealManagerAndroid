@@ -2,6 +2,8 @@ package com.example.mealmanager
 
 import android.app.Activity
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -21,6 +23,9 @@ import java.io.OutputStream
 class MainActivity : Activity() {
     private lateinit var web: WebView
     private var reportWebView: WebView? = null
+    private var activePrintJob: android.print.PrintJob? = null
+    private var printInProgress = false
+    private val printHandler = Handler(Looper.getMainLooper())
     private val CREATE_BACKUP = 101
     private val OPEN_BACKUP = 102
     private val CREATE_CSV = 103
@@ -137,26 +142,92 @@ class MainActivity : Activity() {
 
         @JavascriptInterface fun printReport(html: String) {
             runOnUiThread {
+                if (printInProgress) {
+                    web.evaluateJavascript("alert('A PDF export is already in progress. Please finish or cancel it first.')", null)
+                    return@runOnUiThread
+                }
+                printInProgress = true
                 try {
                     val printView = WebView(this@MainActivity)
                     reportWebView = printView
                     printView.settings.javaScriptEnabled = false
+                    printView.settings.domStorageEnabled = false
+                    printView.setBackgroundColor(android.graphics.Color.WHITE)
+                    var printStarted = false
                     printView.webViewClient = object : WebViewClient() {
                         override fun onPageFinished(view: WebView, url: String?) {
-                            val manager = getSystemService(PRINT_SERVICE) as PrintManager
-                            manager.print(
-                                "Meal-Manager-${System.currentTimeMillis()}",
-                                view.createPrintDocumentAdapter("Meal Manager Monthly Report"),
-                                PrintAttributes.Builder().build()
-                            )
+                            if (printStarted) return
+                            printStarted = true
+                            // Wait until WebView has committed its visual state before handing
+                            // the document to Android's print spooler. This avoids intermittent
+                            // empty/zero-byte PDF output on slower devices.
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                view.postVisualStateCallback(1L, object : WebView.VisualStateCallback() {
+                                    override fun onComplete(requestId: Long) {
+                                        view.postDelayed({ startReportPrint(view) }, 350L)
+                                    }
+                                })
+                            } else {
+                                view.postDelayed({ startReportPrint(view) }, 700L)
+                            }
                         }
                     }
-                    printView.loadDataWithBaseURL(null, html, "text/HTML", "UTF-8", null)
+                    printView.loadDataWithBaseURL(
+                        "file:///android_asset/",
+                        html,
+                        "text/html",
+                        "UTF-8",
+                        null
+                    )
                 } catch (e: Exception) {
-                    val msg = org.json.JSONObject.quote(e.message ?: "Could not open PDF export")
+                    printInProgress = false
+                    val msg = org.json.JSONObject.quote(e.message ?: "Could not prepare PDF report")
                     web.evaluateJavascript("alert('PDF export error: '+$msg)", null)
                 }
             }
+        }
+
+        private fun startReportPrint(view: WebView) {
+            if (reportWebView !== view) return
+            try {
+                val manager = getSystemService(PRINT_SERVICE) as PrintManager
+                val adapter = view.createPrintDocumentAdapter("Meal Manager Monthly Report")
+                val attributes = PrintAttributes.Builder()
+                    .setMediaSize(PrintAttributes.MediaSize.ISO_A3.asLandscape())
+                    .setResolution(PrintAttributes.Resolution("pdf", "PDF", 300, 300))
+                    .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
+                    .build()
+                val job = manager.print(
+                    "Meal-Manager-${System.currentTimeMillis()}",
+                    adapter,
+                    attributes
+                )
+                activePrintJob = job
+                watchReportPrintJob(job, view)
+            } catch (e: Exception) {
+                printInProgress = false
+                val msg = org.json.JSONObject.quote(e.message ?: "Could not start PDF export")
+                web.evaluateJavascript("alert('PDF export error: '+$msg)", null)
+            }
+        }
+
+        private fun watchReportPrintJob(job: android.print.PrintJob, view: WebView) {
+            printHandler.postDelayed({
+                if (activePrintJob !== job) return@postDelayed
+                if (job.isCompleted || job.isCancelled || job.isFailed) {
+                    activePrintJob = null
+                    printInProgress = false
+                    // Keep the WebView alive until Android has finished rendering the PDF.
+                    view.postDelayed({
+                        if (reportWebView === view) {
+                            view.destroy()
+                            reportWebView = null
+                        }
+                    }, 1500L)
+                } else {
+                    watchReportPrintJob(job, view)
+                }
+            }, 1000L)
         }
 
         @JavascriptInterface fun request(method: String, endpoint: String, payload: String): String {
